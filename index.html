@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>谍报风云</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background-color: #0c0c0f;
+    color: #e0d8cc;
+    min-height: 100vh;
+    padding: 30px 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 560px; margin: 0 auto; }
+
+  .title-area { text-align: center; margin-bottom: 40px; }
+
+  .main-title {
+    display: block;
+    font-size: 26px;
+    font-style: italic;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #444444;
+  }
+
+  .sub-title {
+    display: block;
+    margin-top: 4px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #3d3d3d;
+    font-style: italic;
+  }
+
+  .word-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 15px;
+  }
+
+  .word-slot {
+    width: 49%;
+    min-height: 80px;
+    margin-bottom: 8px;
+    padding: 12px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #141418;
+    border: 1px solid #2a2824;
+    border-radius: 6px;
+  }
+
+  .slot-number { font-size: 10px; color: #6b6358; }
+
+  .slot-word {
+    font-size: 16px;
+    color: #e0d8cc;
+    text-align: center;
+    word-break: break-all;
+    font-weight: 600;
+  }
+
+  .word-grid.is-hidden .slot-word { color: #6b6358; }
+
+  .word-grid.is-locked .word-slot {
+    border-color: #b8936e;
+    box-shadow: 0 0 10px rgba(184, 147, 110, 0.5);
+  }
+  .word-grid.is-locked .slot-number { color: #d4b896; }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 15px;
+  }
+
+  .btn-generate {
+    background-color: #b71c2c;
+    color: #f0d0c8;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    padding: 12px;
+    cursor: pointer;
+    letter-spacing: 2px;
+  }
+
+  .btn-lock, .btn-hide {
+    background-color: #1e1e24;
+    color: #b0a89a;
+    border: 1px solid #353330;
+    border-radius: 6px;
+    font-size: 14px;
+    padding: 12px;
+    cursor: pointer;
+    letter-spacing: 2px;
+  }
+
+  .btn-lock.is-active {
+    border-color: #b8936e;
+    color: #d4b896;
+    background: #1e1c18;
+  }
+
+  .btn-hide.is-active {
+    border-color: #b71c2c;
+    color: #f0d0c8;
+    background: #1e1416;
+  }
+
+  .divider { height: 1px; background: #353330; margin: 20px 0; }
+
+  .digit-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 15px 10px;
+    margin-bottom: 15px;
+    border: 1px solid #5a3a30;
+    border-radius: 8px;
+    background: #1c1a15;
+  }
+
+  .digit-box {
+    min-width: 50px;
+    padding: 10px 0;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(180, 150, 120, 0.25);
+    border-radius: 6px;
+  }
+
+  .digit-text {
+    font-size: 30px;
+    font-weight: 700;
+    color: #e8d5b8;
+    font-family: 'Consolas', monospace;
+  }
+
+  .digit-row.is-hidden .digit-text { color: #6b6358; }
+
+  .digit-sep { font-size: 20px; color: #b8936e; }
+
+  .seed-area {
+    margin-top: 20px;
+    padding: 14px;
+    background: #141418;
+    border: 1px solid #2a2824;
+    border-radius: 6px;
+  }
+
+  .seed-current {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .seed-label { font-size: 12px; color: #6b6358; letter-spacing: 2px; }
+
+  .seed-value {
+    font-family: 'Consolas', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: #e8d5b8;
+    letter-spacing: 3px;
+    user-select: all;
+  }
+
+  .seed-lookup { display: flex; gap: 8px; }
+
+  .seed-input {
+    flex: 1;
+    background: #0c0c0f;
+    border: 1px solid #353330;
+    border-radius: 4px;
+    padding: 10px;
+    color: #e0d8cc;
+    font-size: 14px;
+    font-family: 'Consolas', monospace;
+    letter-spacing: 2px;
+    text-align: center;
+    outline: none;
+    text-transform: lowercase;
+  }
+
+  .seed-input:focus { border-color: #b8936e; }
+
+  .btn-lookup {
+    background-color: #1e1e24;
+    color: #b0a89a;
+    border: 1px solid #353330;
+    border-radius: 4px;
+    padding: 0 18px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .wordbank-status {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 11px;
+    color: #6b6358;
+    letter-spacing: 1px;
+  }
+
+  @keyframes slotFlash {
+    0%   { transform: scale(0.93); opacity: 0.4; }
+    55%  { transform: scale(1.035); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .word-grid.is-flashing .word-slot {
+    animation: slotFlash 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .word-grid.is-flashing .word-slot:nth-child(1) { animation-delay: 0s; }
+  .word-grid.is-flashing .word-slot:nth-child(2) { animation-delay: 0.05s; }
+  .word-grid.is-flashing .word-slot:nth-child(3) { animation-delay: 0.1s; }
+  .word-grid.is-flashing .word-slot:nth-child(4) { animation-delay: 0.15s; }
+
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: #1a1210;
+    border: 1px solid #b8936e;
+    color: #e0d8cc;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    z-index: 999;
+    transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+    pointer-events: none;
+    max-width: 80vw;
+    text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+  <div class="title-area">
+    <span class="main-title">谍报风云</span>
+    <span class="sub-title">@Milson</span>
+  </div>
+
+  <div class="word-grid" id="word-grid">
+    <div class="word-slot"><span class="slot-number">No.1</span><span class="slot-word" id="word-0">—</span></div>
+    <div class="word-slot"><span class="slot-number">No.2</span><span class="slot-word" id="word-1">—</span></div>
+    <div class="word-slot"><span class="slot-number">No.3</span><span class="slot-word" id="word-2">—</span></div>
+    <div class="word-slot"><span class="slot-number">No.4</span><span class="slot-word" id="word-3">—</span></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-generate" id="btn-regen-words">🔄 重新生成</button>
+    <button class="btn-lock" id="btn-lock-words">🔓 锁定</button>
+    <button class="btn-hide" id="btn-hide-words">👁 隐藏</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="digit-row" id="digit-row">
+    <div class="digit-box"><span class="digit-text" id="digit-0">—</span></div>
+    <span class="digit-sep">·</span>
+    <div class="digit-box"><span class="digit-text" id="digit-1">—</span></div>
+    <span class="digit-sep">·</span>
+    <div class="digit-box"><span class="digit-text" id="digit-2">—</span></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-generate" id="btn-regen-numbers">🔄 重新抽取</button>
+    <button class="btn-hide" id="btn-hide-numbers">👁 隐藏</button>
+  </div>
+
+  <div class="seed-area">
+    <div class="seed-current">
+      <span class="seed-label">本局代码</span>
+      <span class="seed-value" id="seed-display">-------</span>
+    </div>
+    <div class="seed-lookup">
+      <input class="seed-input" id="seed-input" type="text" placeholder="输入 7 位代码查看" maxlength="7" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <button class="btn-lookup" id="btn-lookup">查看</button>
+    </div>
+  </div>
+
+  <div class="wordbank-status">内置词库 · 共 <span id="wordbank-count">0</span> 词</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ==================== 词库 ==================== */
+  const WORDBANK = {
+    '服饰与配饰': [
+      '阿迪达斯','耐克','李宁','安踏','优衣库','冲锋衣','棒球服','牛仔外套','连帽卫衣','纯棉 T 恤',
+      '羊毛毛衣','长款风衣','运动短裤','百褶裙','牛仔裤','阔腿裤','雪地靴','老爹鞋','帆布鞋','马丁靴',
+      '鸭舌帽','棒球帽','针织围巾','毛线手套','遮阳墨镜','帆布包','双肩背包','皮带','手表','发圈',
+      '发夹','耳钉','项链','手链','丝袜','打底衫','加绒秋裤','睡衣套装','防晒衣','瑜伽裤',
+      '皮鞋','乐福鞋','手提包','斜挎包','渔夫帽','遮阳帽','运动护腕','束脚裤','居家拖鞋','纯棉睡衣',
+      '彪马','半身裙','皮衣','西装外套','阔腿牛仔裤','雨靴','贝雷帽','礼帽','羊绒手套','护目镜',
+      '腰包','钱包','胸针','手镯','保暖内衣','安全裤','防晒帽'
+    ],
+    '品牌与交通': [
+      '微软','苹果','特斯拉','宝马','奔驰','奥迪','丰田','本田','大众','谷歌',
+      '亚马逊','英伟达','华为','腾讯','阿里巴巴','字节跳动','百度','小米','比亚迪','电动车',
+      '摩托车','共享单车','理想','小鹏','蔚来','凯迪拉克','领克','惠普','戴尔','三星',
+      '索尼','大疆','顺丰','地铁','高铁','帆船','红旗','马自达','捷豹','华硕',
+      '联想','佳能','圆通','游轮','有轨电车','房车','拖拉机','缆车','邮政','vivo',
+      'OPPO','红米','荣耀','中石化','客车','滑翔机','货轮'
+    ],
+    '影视与文学': [
+      '哆啦 A 梦','名侦探柯南','西游记','红楼梦','水浒传','三国演义','功夫','纪录片','古装剧','现代剧',
+      '喜剧片','动作片','科幻片','海贼王','火影忍者','哈利波特','恐怖片','微电影','舞台剧','童话书',
+      '海绵宝宝','蜡笔小新','科幻小说','童话绘本','黑猫警长','变形金刚','惊悚片','广播剧','美少女战士','千与千寻',
+      '龙猫','喜羊羊与灰太狼','你的名字','疯狂动物城','冰雪奇缘','葫芦兄弟','大头儿子和小头爸爸','舒克和贝塔','阿甘正传','泰坦尼克号',
+      '复仇者联盟','朝花夕拾','骆驼祥子','简爱','巴黎圣母院','鲁滨逊漂流记','封神演义','格林童话','安徒生童话'
+    ],
+    '地点与地标': [
+      '深圳','北京','上海','广州','成都','杭州','重庆','西安','南京','武汉',
+      '美术馆','博物馆','图书馆','歌剧院','体育馆','游乐园','动物园','植物园','科技馆','音乐厅',
+      '步行街','高铁站','飞机场','影视城','文化馆','山间溪流','海边沙滩','城市公园','天津','苏州',
+      '长沙','厦门','青岛','拉萨','古镇','瀑布','沙漠','滑雪场','游泳馆','书店',
+      '车站码头','伦敦','巴黎','纽约','东京','首尔','柏林','罗马','莫斯科','迪拜',
+      '曼谷','新加坡','悉尼','开罗','里约热内卢','巴塞罗那','维也纳','阿姆斯特丹','埃菲尔铁塔','凯旋门',
+      '卢浮宫','大本钟','白金汉宫','伦敦塔桥','自由女神像','帝国大厦','白宫','金门大桥','悉尼歌剧院','罗马斗兽场',
+      '比萨斜塔','泰姬陵','吉萨金字塔','狮身人面像','哈利法塔','富士山','雅典卫城','吴哥窟','马丘比丘','圣索菲亚大教堂',
+      '新天鹅堡','基督救世主雕像','巨石阵'
+    ],
+    '文具与教具': [
+      '荧光笔','笔记本','错题本','作业本','答题卡','试卷','橡皮','修正带','卷笔刀','圆规',
+      '三角尺','文件夹','文件袋','档案盒','订书机','便利贴','书签','书包','拉杆箱书包','课桌',
+      '讲台','中性笔','钢笔','马克笔','彩铅','素描本','书立','回形针','长尾夹','笔袋',
+      '黑板擦','水彩颜料','速写板','直尺','美工刀','胶水','固体胶','收纳盒','粉笔','绘图板',
+      '美术剪刀','书套','墨水','标尺','笔筒'
+    ],
+    '节庆与数码娱乐': [
+      '春节','元宵节','清明节','端午节','七夕节','中秋节','重阳节','冬至','元旦','劳动节',
+      '儿童节','国庆节','妇女节','青年节','教师节','父亲节','母亲节','腊八节','火把节','泼水节',
+      '万圣节','圣诞节','生日','除夕','英雄联盟','王者荣耀','和平精英','原神','我的世界','绝地求生',
+      '反恐精英','电竞鼠标','游戏手柄','单反相机','拍立得','蓝牙耳机','智能手环','平板','笔记本电脑','机械键盘',
+      '移动硬盘','云台','游戏耳机'
+    ],
+    '人物与职业': [
+      '主播','博主','摄影师','化妆师','造型师','厨师','面点师','外卖员','快递员','司机',
+      '导游','翻译','律师','会计','设计师','程序员','工程师','建筑师','画家','书法家',
+      '音乐家','舞蹈家','模特','健身教练','美甲师','理发师','保洁员','安保人员','消防员','交警',
+      '特警','护士','药剂师','兽医','农艺师','航天员','人民警察','执业医生','校长','职业歌手',
+      '影视演员','体育运动员','美食博主','户外主播','蔡徐坤','易烊千玺','王源','王俊凯','杨幂','迪丽热巴',
+      '赵丽颖','刘亦菲','吴京','沈腾','黄渤','歌手','演员','运动员','雕塑家','配音员',
+      '花艺师','营养师','狱警','儿科医生','古天乐','周杰伦','成龙','周迅'
+    ],
+    '家居与家电': [
+      '不粘锅','砂锅','汤勺','菜刀','实木菜板','硅胶锅铲','蒸笼屉','棉抹布','平板拖把','分类垃圾桶',
+      '滚筒洗衣机','双门冰箱','壁挂空调','液晶电视','落地风扇','护眼台灯','乳胶床垫','记忆棉枕头','纯棉被子','实木衣柜',
+      '布艺沙发','岩板茶几','人体工学椅','落地书架','无痕挂钩','纯棉毛巾','软毛牙刷','香皂','洗衣液','沐浴露',
+      '进门地垫','防盗门锁','黄铜钥匙','多孔插座','电子闹钟','抽纸','密封保鲜盒','食品保鲜膜','吹风机','电动剃须刀',
+      '全身镜子','落地晾衣架','智能电饭煲','家用微波炉','空气炸锅','扫地机器人','恒温热水壶','浴室防滑垫','玻璃清洁剂','炖锅',
+      '锅铲','菜篮子','扫把','衣架','窗帘','地毯','床头柜','书柜','加湿器','净化器',
+      '电热水壶','马桶刷','洗衣凝珠','浴球'
+    ],
+    '美食与饮品': [
+      '韭菜饺子','鲜肉包子','油炸油条','杂粮煎饼','喜茶','可口可乐','百事可乐','雪碧','纯牛奶','原味酸奶',
+      '现磨咖啡','龙井绿茶','青岛啤酒','矿泉水','柠檬气泡水','黄牛肉','基围虾','大闸蟹','土鸡蛋','上海青',
+      '胡萝卜','黄瓜','圣女果','青尖椒','草莓','红富士苹果','香蕉','脐橙','麒麟西瓜','金枕榴莲',
+      '川味火锅','东北烧烤','肯德基炸鸡','汉堡王汉堡','日式寿司','柳州螺蛳粉','四川麻辣烫','蛋炒饭','小米稀饭','小笼汤包',
+      '广式烧麦','卤鸭脖','生抽','老抽','食用盐','白砂糖','红花椒','八角','陈醋','芝麻油',
+      '奥尔良烤翅','冰淇淋','手打柠檬茶','生椰拿铁','杨枝甘露','冰美式','奶盖茶','果茶','气泡酒','网红蛋糕',
+      '巴斯克蛋糕','麻薯','雪媚娘','爆浆泡芙','脏脏包','烤冷面','手打虾滑','芝士焗饭','韩式炸鸡','泰式料理',
+      '日式寿喜烧','绵绵冰','刨冰','关东煮','脆皮年糕','糯米饭团','熔岩巧克力','奶冻','芋圆仙草','厚切酸奶',
+      '水果捞','可丽饼','热奶宝','卤味拼盘','火山石烤肠','章鱼小丸子','脆皮烧肉','冰沙','冻柠茶','港式奶茶',
+      '菠萝','芒果','桃子','蓝莓','鲈鱼','羊肉','金针菇','菠菜','莲藕','披萨',
+      '意面','蛋挞','舒芙蕾','可可','红茶','威士忌','酸奶块','麦芽糖','蚝油','胡椒粉'
+    ],
+    '运动与休闲': [
+      '钓鱼竿','羽毛球拍','篮球','乒乓球拍','游泳圈','登山杖','露营帐篷','飞盘','瑜伽垫','跳绳',
+      '剧本杀卡牌','密室线索牌','KTV 麦克风','手绘画板','钢笔字帖','多肉盆栽','布偶猫咪','金毛犬','小仓鼠','金鱼缸',
+      '虎皮鹦鹉','向阳花','满天星','复古唱片','纸质绘本','悬疑小说','古风书签','实木麻将','扑克牌','桌游卡牌',
+      '轮滑鞋','平衡车','徒步背包','野餐垫','泡泡机','天文望远镜','星空海报','卡通手办','彩色气球','复古胶片',
+      '香薰蜡烛','网球拍','排球','足球','滑板','飞镖','台球杆','滑翔伞','钓鱼椅','手账本',
+      '油画颜料','仓鼠笼','郁金香','玫瑰','银杏','拼图','积木','手风琴','吉他'
+    ]
+  };
+
+  /* ==================== 种子随机（只用于词语） ==================== */
+  const SEED_CHARS = '23456789abcdefghjkmnpqrstuvwxyz';
+  const SEED_LEN = 7;
+
+  function stringToSeed(str) {
+    let h = 1779033703 ^ str.length;
+    for (let i = 0; i < str.length; i++) {
+      h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+      h = h << 13 | h >>> 19;
+    }
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return (h ^= h >>> 16) >>> 0;
+  }
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function makeSeed() {
+    let s = '';
+    for (let i = 0; i < SEED_LEN; i++) {
+      s += SEED_CHARS[Math.floor(Math.random() * SEED_CHARS.length)];
+    }
+    return s;
+  }
+
+  /* ==================== 状态 ==================== */
+  const state = {
+    words: [],
+    numbers: [],
+    wordsLocked: false,
+    wordsHidden: false,
+    numbersHidden: false,
+    seed: ''
+  };
+
+  /* ==================== DOM ==================== */
+  const $ = id => document.getElementById(id);
+
+  const toastEl = $('toast');
+  const wordGrid = $('word-grid');
+  const digitRow = $('digit-row');
+  const wordEls = [0, 1, 2, 3].map(i => $('word-' + i));
+  const digitEls = [0, 1, 2].map(i => $('digit-' + i));
+
+  const btnRegenWords = $('btn-regen-words');
+  const btnLockWords = $('btn-lock-words');
+  const btnHideWords = $('btn-hide-words');
+  const btnRegenNumbers = $('btn-regen-numbers');
+  const btnHideNumbers = $('btn-hide-numbers');
+  const btnLookup = $('btn-lookup');
+  const seedInput = $('seed-input');
+
+  /* ==================== Toast ==================== */
+  let toastTimer = null;
+  function showToast(msg) {
+    clearTimeout(toastTimer);
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
+  }
+
+  /* ==================== 抽取逻辑 ==================== */
+  function pickWords(seedStr) {
+    const rand = mulberry32(stringToSeed('w:' + seedStr));
+    const categories = Object.keys(WORDBANK).slice();
+    for (let i = categories.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      const tmp = categories[i];
+      categories[i] = categories[j];
+      categories[j] = tmp;
+    }
+    const selectedCats = categories.slice(0, 4);
+    return selectedCats.map(cat => {
+      const list = WORDBANK[cat];
+      return list[Math.floor(rand() * list.length)];
+    });
+  }
+
+  function pickNumbers() {
+    const arr = [1, 2, 3, 4];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = tmp;
+    }
+    return arr.slice(0, 3);
+  }
+
+  /* ==================== 渲染 ==================== */
+  function renderWords() {
+    wordEls.forEach((el, i) => {
+      const word = state.words[i] || '';
+      el.textContent = state.wordsHidden ? '••••' : (word || '—');
+    });
+    wordGrid.classList.toggle('is-hidden', state.wordsHidden);
+    wordGrid.classList.toggle('is-locked', state.wordsLocked);
+  }
+
+  function renderNumbers() {
+    digitEls.forEach((el, i) => {
+      const num = state.numbers[i];
+      el.textContent = state.numbersHidden ? '•' : (num === undefined ? '—' : num);
+    });
+    digitRow.classList.toggle('is-hidden', state.numbersHidden);
+  }
+
+  function renderSeed() {
+    $('seed-display').textContent = state.seed || '-------';
+  }
+
+  function syncButtons() {
+    btnLockWords.classList.toggle('is-active', state.wordsLocked);
+    btnLockWords.textContent = state.wordsLocked ? '🔒 已锁定' : '🔓 锁定';
+
+    btnHideWords.classList.toggle('is-active', state.wordsHidden);
+    btnHideWords.textContent = state.wordsHidden ? '👁 显示' : '👁 隐藏';
+
+    btnHideNumbers.classList.toggle('is-active', state.numbersHidden);
+    btnHideNumbers.textContent = state.numbersHidden ? '👁 显示' : '👁 隐藏';
+  }
+
+  function flashWords() {
+    wordGrid.classList.remove('is-flashing');
+    void wordGrid.offsetWidth;
+    wordGrid.classList.add('is-flashing');
+    setTimeout(() => wordGrid.classList.remove('is-flashing'), 700);
+  }
+
+  /* ==================== 操作 ==================== */
+  function regenerateWords() {
+    if (state.wordsLocked) {
+      showToast('词语已锁定，请先解锁');
+      return;
+    }
+    state.seed = makeSeed();
+    state.words = pickWords(state.seed);
+    if (state.wordsHidden) { state.wordsHidden = false; syncButtons(); }
+    renderWords();
+    renderSeed();
+    flashWords();
+  }
+
+  function toggleLockWords() {
+    state.wordsLocked = !state.wordsLocked;
+    renderWords();
+    syncButtons();
+    showToast(state.wordsLocked ? '词语已锁定' : '词语已解锁');
+  }
+
+  function toggleHideWords() {
+    state.wordsHidden = !state.wordsHidden;
+    renderWords();
+    syncButtons();
+    showToast(state.wordsHidden ? '词语已隐藏' : '词语已显示');
+  }
+
+  function regenerateNumbers() {
+    state.numbers = pickNumbers();
+    if (state.numbersHidden) { state.numbersHidden = false; syncButtons(); }
+    renderNumbers();
+  }
+
+  function toggleHideNumbers() {
+    state.numbersHidden = !state.numbersHidden;
+    renderNumbers();
+    syncButtons();
+    showToast(state.numbersHidden ? '编号已隐藏' : '编号已显示');
+  }
+
+  function lookupSeed() {
+    const val = (seedInput.value || '').trim().toLowerCase();
+    if (val.length !== SEED_LEN) {
+      showToast('请输入 7 位代码');
+      return;
+    }
+    for (let i = 0; i < val.length; i++) {
+      if (SEED_CHARS.indexOf(val[i]) === -1) {
+        showToast('代码含无效字符，请核对');
+        return;
+      }
+    }
+    state.seed = val;
+    state.words = pickWords(val);
+    state.wordsLocked = false;
+    state.wordsHidden = false;
+    renderWords();
+    renderSeed();
+    syncButtons();
+    flashWords();
+    seedInput.value = '';
+    showToast('已载入代码 ' + val);
+  }
+
+  /* ==================== 事件绑定 ==================== */
+  btnRegenWords.addEventListener('click', regenerateWords);
+  btnLockWords.addEventListener('click', toggleLockWords);
+  btnHideWords.addEventListener('click', toggleHideWords);
+  btnRegenNumbers.addEventListener('click', regenerateNumbers);
+  btnHideNumbers.addEventListener('click', toggleHideNumbers);
+  btnLookup.addEventListener('click', lookupSeed);
+  seedInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') lookupSeed();
+  });
+
+  /* ==================== 初始化 ==================== */
+  function init() {
+    const total = Object.values(WORDBANK).reduce((sum, arr) => sum + arr.length, 0);
+    $('wordbank-count').textContent = total;
+    state.seed = makeSeed();
+    state.words = pickWords(state.seed);
+    state.numbers = pickNumbers();
+    renderWords();
+    renderNumbers();
+    renderSeed();
+    syncButtons();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
